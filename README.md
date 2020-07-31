@@ -1,1 +1,1 @@
-# budgety_js
+# Budgety
