@@ -165,7 +165,36 @@ var UIController = (function() {
         expensesLabel : '.budget__expenses--value',
         percentageLabel : '.budget__expenses--percentage',
         container : '.container',
-        expensesPercentageLabel : '.item__percentage'
+        expensesPercentageLabel : '.item__percentage',
+        dateLabel : '.budget__title--month'
+    }
+
+    var formatNumber = function(num, type) {
+
+        /*
+        + - income
+        - - expenses
+        exactly 2 decimal pts.
+        comma separating the thousands
+        */
+
+        var numSplit, integer, decimal, sign;
+
+        num = Math.abs(num);
+
+        //toFixed will convert it to a string
+        num = num.toFixed(2);
+
+        numSplit = num.split('.');
+        integer  = numSplit[0];
+        decimal = numSplit[1];
+
+        if(integer.length > 3) {
+            integer = integer.substr(0,integer.length - 3) + ',' + integer.substr(1,3);
+        }
+
+        return (type === 'exp' ? '- ' : '+ ') + integer + '.' + decimal;
+
     }
 
     return {
@@ -199,7 +228,7 @@ var UIController = (function() {
             // Replace the placeholder text with actual data from newItem
             newHtml = html.replace('%id%', obj.id);
             newHtml = newHtml.replace('%description%', obj.description);
-            newHtml = newHtml.replace('%value%', obj.value);
+            newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
 
             // Insert HTML using DOM
             document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
@@ -228,9 +257,11 @@ var UIController = (function() {
 
         displayBudget: function(obj){
 
-            document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
-            document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
-            document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
+            var type;
+            obj.budget > 0 ? type = 'inc' : type = 'exp';
+            document.querySelector(DOMStrings.budgetLabel).textContent = formatNumber(obj.budget, type);
+            document.querySelector(DOMStrings.incomeLabel).textContent = formatNumber(obj.totalInc, 'inc');
+            document.querySelector(DOMStrings.expensesLabel).textContent = formatNumber(obj.totalExp,'exp');
 
             if(obj.percentage > 0) {
                 document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage+' %';
@@ -245,7 +276,6 @@ var UIController = (function() {
 
             //returns a Node List -> different from List
             var fields = document.querySelectorAll(DOMStrings.expensesPercentageLabel);
-            console.log(fields);
             var nodeListForEach = function(list, callback) {
                 for (var i = 0; i < list.length; i++) {
                     callback(list[i],i);
@@ -260,6 +290,23 @@ var UIController = (function() {
                 else
                     current.textContent = '---';
             });
+
+        },
+
+        displayMonth : function() {
+
+            var now, year, month, months;
+
+            months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+            //returns date of today
+            now = new Date();
+
+            // Get the year
+
+            year = now.getFullYear();
+            month = months[now.getMonth()];
+            document.querySelector(DOMStrings.dateLabel).textContent = month+', '+year;
+
 
         },
 
@@ -317,7 +364,6 @@ var controller = (function(budgetCtrl, UICtrl){
 
         // 2. Read percentages from the budget controller
         var percentages = budgetCtrl.getPercentage();
-        console.log(percentages);
 
         // 3. Update the UI with the new percentages
         UICtrl.displayPercentages(percentages);
@@ -381,6 +427,7 @@ var controller = (function(budgetCtrl, UICtrl){
     return {
         init: function(){
             console.log('Application has started.');
+            UICtrl.displayMonth();
             UICtrl.displayBudget({
                 budget: 0,
                 totalInc : 0,
